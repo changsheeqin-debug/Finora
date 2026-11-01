@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 const chartColors = [
     "#4D8565",
     "#789ACB",
@@ -30,6 +31,20 @@ function CategoryChart({ transactions }) {
         ...chartCategories.map((item) => item[1]),
         1
     );
+    const chartRef = useRef(null);
+    const [chartWidth, setChartWidth] = useState(600);
+
+    useEffect(() => {
+        const observer = new ResizeObserver(([entry]) => {
+            setChartWidth(entry.contentRect.width);
+        });
+
+        if (chartRef.current) {
+            observer.observe(chartRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
 
     return (
         <div className="card">
@@ -40,12 +55,12 @@ function CategoryChart({ transactions }) {
                 </div>
             </div>
 
-            <div className="chart-wrap">
+            <div className="chart-wrap" ref={chartRef}>
                 {chartCategories.length > 0 ? (
                     <svg viewBox="0 0 600 230" preserveAspectRatio="none">
                         {chartCategories.map(([category, amount], index) => {
                             const y = 12 + index * 43;
-                            const barWidth = (amount / maxAmount) * 390;
+                            const barWidth = (amount / maxAmount) * 390 * (chartWidth / 600);
 
                             return (
                                 <g key={category}>
@@ -55,22 +70,22 @@ function CategoryChart({ transactions }) {
                                         fontSize="12"
                                         fill="currentColor"
                                     >
-                                        {category.length > 15
-                                            ? `${category.slice(0, 15)}…`
+                                        {category.length > 25
+                                            ? `${category.slice(0, 25)}…`
                                             : category}
                                     </text>
 
                                     <rect
-                                        x="180"
+                                        x="160"
                                         y={y}
                                         width={barWidth}
                                         height="19"
                                         rx="5"
                                         fill={chartColors[index % chartColors.length]}
                                     />
-
+ 
                                     <text
-                                        x={Math.min(180 + barWidth + 8, 585)}
+                                        x={Math.min(160 + barWidth + 8, 585)}
                                         y={y + 14}
                                         fontSize="11"
                                         fill="currentColor"

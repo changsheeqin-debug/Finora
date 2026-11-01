@@ -2,92 +2,112 @@
 import { useMemo, useState } from "react";
 import CategoryChart from "../components/charts/CategoryChart";
 import PaymentMethodChart from "../components/charts/PaymentMethodChart";
+import { formatMoney } from "../utils/formatMoney";
 
-function Dashboard({ transactions, onAddTransaction, onNavigate }) {
+function Dashboard({
+    transactions,
+    goals,
+    currency,
+    notifications,
+    onAddTransaction,
+    onNavigate,
+    user
+}) {
     const [dashPeriod, setDashPeriod] = useState("month");
+    const [selectedMonth, setSelectedMonth] = useState("");
 
-    // Find the latest month containing transaction data.
-    // This makes the sample October 2026 data visible by default.
+    // Get available months from transaction records.
     const availableMonths = useMemo(() => {
-        return [...new Set(
-            transactions.map((transaction) => transaction.date.slice(0, 7))
-        )].sort().reverse();
+        return [
+            ...new Set(
+                transactions.map((transaction) =>
+                    transaction.date.slice(0, 7)
+                )
+            )
+        ].sort().reverse();
     }, [transactions]);
 
-const [selectedMonth, setSelectedMonth] = useState("");
-
-const activeMonth = selectedMonth || availableMonths[0] || "";
-
-    const previousMonth = (month) => {
-        if (!month) return "";
-        const date = new Date(`${month}-01T00:00:00`);
-        date.setMonth(date.getMonth() - 1);
-        return date.toISOString().slice(0, 7);
-    };
+    // Default to the latest month containing transactions.
+    const activeMonth = selectedMonth || availableMonths[0] || "";
 
     // Filter transactions according to the selected period.
     const selectedTransactions = useMemo(() => {
-    if (!activeMonth) return [];
+        if (dashPeriod === "all") {
+            return transactions;
+        }
 
-    if (dashPeriod === "all") return transactions;
+        if (!activeMonth) {
+            return [];
+        }
 
-    return transactions.filter(
-        (transaction) => transaction.date.startsWith(activeMonth)
-    );
+        return transactions.filter((transaction) =>
+            transaction.date.startsWith(activeMonth)
+        );
     }, [transactions, dashPeriod, activeMonth]);
 
+    // Get expense transactions.
     const expenses = selectedTransactions.filter(
-        (transaction) => transaction.type === "Expenses"
+        (transaction) =>
+            ["expense", "expenses"].includes(
+                transaction.type?.toLowerCase()
+            )
     );
 
+    // Calculate total spending.
     const totalSpent = expenses.reduce(
-        (total, transaction) => total + Number(transaction.amount), 0
+        (total, transaction) =>
+            total + Number(transaction.amount || 0),
+        0
     );
 
-    // Calculate payment method totals.
-    const methodTotals = useMemo(() => {
-        return expenses.reduce((result, transaction) => {
-            const method = transaction.method;
-            result[method] = (result[method] || 0) + Number(transaction.amount);
-            return result;
-        }, {});
-    }, [selectedTransactions]);
+    // Calculate spending by category.
+    const categoryTotals = expenses.reduce((result, transaction) => {
+        const category = transaction.category;
+
+        result[category] =
+            (result[category] || 0) + Number(transaction.amount || 0);
+
+        return result;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1]);
+
+    const topCategory = sortedCategories[0];
+
+    // Calculate spending by payment method.
+    const methodTotals = expenses.reduce((result, transaction) => {
+        const method = transaction.method;
+
+        result[method] =
+            (result[method] || 0) + Number(transaction.amount || 0);
+
+        return result;
+    }, {});
 
     const sortedMethods = Object.entries(methodTotals)
         .sort((a, b) => b[1] - a[1]);
 
     const primaryMethod = sortedMethods[0];
 
-    const formatMoney = (amount) =>
-        `RM ${amount.toLocaleString("en-MY", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-
+    // Format transaction date.
     const formatDate = (date) =>
         new Date(date).toLocaleDateString("en-MY", {
             day: "2-digit",
             month: "short"
         });
 
-    // Recent transactions, newest first.
+    // Get the five most recent transactions.
     const recentTransactions = [...selectedTransactions]
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 5);
-
-
-    // Prepare donut chart data.
-    const circumference = 2 * Math.PI * 55;
-    const donutTotal = sortedMethods.reduce((sum, item) => sum + item[1], 0);
-
-    let donutOffset = 0;
 
     return (
         <section className="page" id="dashboard">
             <div className="topbar">
                 <div>
                     <div className="crumb">Workspace / Overview</div>
-                    <h1>Good evening, Jamie 👋</h1>
+                    <h1>Good evening, {user.name.split(" ")[0]}</h1>
                     <div className="subtitle">
                         Here's what's happening with your money.
                     </div>
@@ -99,7 +119,6 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                         onChange={(e) => {
                             if (e.target.value === "all") {
                                 setDashPeriod("all");
-                                setSelectedMonth("");
                             } else {
                                 setDashPeriod("month");
                                 setSelectedMonth(e.target.value);
@@ -127,7 +146,10 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                         <option value="all">All time</option>
                     </select>
 
-                    <button className="btn primary" onClick={onAddTransaction}>
+                    <button
+                        className="btn primary"
+                        onClick={onAddTransaction}
+                    >
                         ＋ Add transaction
                     </button>
                 </div>
@@ -139,19 +161,29 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                     <div className="stat-head">
                         Total spent <span className="stat-icon">↗</span>
                     </div>
-                    <div className="stat-value">{formatMoney(totalSpent)}</div>
-                    <div className="stat-foot">For selected period</div>
+
+                    <div className="stat-value">
+                        {formatMoney(totalSpent, currency)}
+                    </div>
+
+                    <div className="stat-foot">
+                        For selected period
+                    </div>
                 </div>
 
                 <div className="card">
                     <div className="stat-head">
                         Top category <span className="stat-icon">◈</span>
                     </div>
+
                     <div className="stat-value">
                         {topCategory ? topCategory[0] : "No data"}
                     </div>
+
                     <div className="stat-foot">
-                        {topCategory ? formatMoney(topCategory[1]) : "No expenses recorded"}
+                        {topCategory
+                            ? formatMoney(topCategory[1], currency)
+                            : "No expenses recorded"}
                     </div>
                 </div>
 
@@ -159,9 +191,11 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                     <div className="stat-head">
                         Primary payment method <span className="stat-icon">▤</span>
                     </div>
+
                     <div className="stat-value">
                         {primaryMethod ? primaryMethod[0] : "No data"}
                     </div>
+
                     <div className="stat-foot">
                         {primaryMethod && totalSpent > 0
                             ? `${((primaryMethod[1] / totalSpent) * 100).toFixed(1)}% of spending`
@@ -172,10 +206,14 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
 
             {/* Charts */}
             <div className="grid two-col">
-                <CategoryChart transactions={transactions} />
-                <PaymentMethodChart 
-                transactions={selectedTransactions}
-                period={dashPeriod} 
+                <CategoryChart 
+                transactions={transactions}
+                currency={currency} 
+                />
+
+                <PaymentMethodChart
+                    transactions={selectedTransactions}
+                    period={dashPeriod}
                 />
             </div>
 
@@ -187,9 +225,12 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                             <h2>Recent transactions</h2>
                             <p>Your latest money movements</p>
                         </div>
+
                         <button
                             className="text-link"
-                            onClick={() => onNavigate && onNavigate("transactions")}
+                            onClick={() =>
+                                onNavigate && onNavigate("transactions")
+                            }
                         >
                             View all →
                         </button>
@@ -202,25 +243,34 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                                     <th>Description</th>
                                     <th>Category</th>
                                     <th>Date</th>
-                                    <th style={{ textAlign: "right" }}>Amount</th>
+                                    <th style={{ textAlign: "right" }}>
+                                        Amount
+                                    </th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 {recentTransactions.length > 0 ? (
                                     recentTransactions.map((transaction) => (
                                         <tr key={transaction.id}>
                                             <td>{transaction.note}</td>
                                             <td>{transaction.category}</td>
-                                            <td>{formatDate(transaction.date)}</td>
+                                            <td>
+                                                {formatDate(transaction.date)}
+                                            </td>
                                             <td className="amount">
-                                                {transaction.type === "Income" ? "+" : "-"}
-                                                {formatMoney(transaction.amount)}
+                                                {transaction.type?.toLowerCase() === "income"
+                                                    ? "+"
+                                                    : "-"}
+                                                {formatMoney(Number(transaction.amount), currency)}
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="4">No transactions yet.</td>
+                                        <td colSpan="4">
+                                            No transactions yet.
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>
@@ -234,6 +284,7 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                             <h2>Savings goals</h2>
                             <p>You're making progress</p>
                         </div>
+
                         <button
                             className="text-link"
                             onClick={() => onNavigate && onNavigate("goals")}
@@ -242,9 +293,47 @@ const activeMonth = selectedMonth || availableMonths[0] || "";
                         </button>
                     </div>
 
-                    <div className="empty">
-                        Savings goals will appear here once connected.
-                    </div>
+                    {goals && goals.length > 0 ? (
+                        <div className="dashboard-goals">
+                            {goals.slice(0, 3).map((goal) => {
+                                const percentage = goal.targetAmount > 0
+                                    ? Math.min(
+                                        (goal.currentSaved / goal.targetAmount) * 100,
+                                        100
+                                    )
+                                    : 0;
+
+                                return (
+                                    <div className="dashboard-goal" key={goal.id}>
+                                        <div className="dashboard-goal-info">
+                                            <strong>{goal.name}</strong>
+                                            <span>{percentage.toFixed(0)}%</span>
+                                        </div>
+
+                                        <div className="progress-bar">
+                                            <div
+                                                className="progress-fill"
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+
+                                        <div className="dashboard-goal-amount">
+                                            <span>
+                                                {formatMoney(goal.currentSaved, currency)}
+                                            </span>
+                                            <span>
+                                                of {formatMoney(goal.targetAmount, currency)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="empty">
+                            No savings goals yet. Start by creating your first goal!
+                        </div>
+                    )}
                 </div>
             </div>
         </section>

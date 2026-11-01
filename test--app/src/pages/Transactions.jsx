@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { formatMoney } from "../utils/formatMoney";
 
 const categories = [
     "Food", "Transport", "Shopping", "Bills & Utilities",
@@ -14,6 +15,7 @@ const methods = [
 
 function Transactions({
     transactions,
+    currency = "MYR",
     onAddTransaction,
     onEditTransaction,
     onDeleteTransaction
@@ -50,12 +52,6 @@ function Transactions({
         .reduce((total, transaction) => total + Number(transaction.amount), 0);
 
     const netCashFlow = totalIncome - totalExpenses;
-
-    const formatMoney = (amount) =>
-        `RM ${amount.toLocaleString("en-MY", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
 
     const formatDate = (date) =>
         new Date(date).toLocaleDateString("en-MY", {
@@ -105,19 +101,19 @@ function Transactions({
             <div className="grid stats">
                 <div className="card">
                     <div className="stat-head">Total expenses</div>
-                    <div className="stat-value">{formatMoney(totalExpenses)}</div>
+                    <div className="stat-value">{formatMoney(totalExpenses, currency)}</div>
                     <div className="stat-foot">For selected records</div>
                 </div>
 
                 <div className="card">
                     <div className="stat-head">Total income</div>
-                    <div className="stat-value">{formatMoney(totalIncome)}</div>
+                    <div className="stat-value">{formatMoney(totalIncome, currency)}</div>
                     <div className="stat-foot">For selected records</div>
                 </div>
 
                 <div className="card">
                     <div className="stat-head">Net cash flow</div>
-                    <div className="stat-value">{formatMoney(netCashFlow)}</div>
+                    <div className="stat-value">{formatMoney(netCashFlow, currency)}</div>
                     <div className="stat-foot">Income minus expenses</div>
                 </div>
             </div>
@@ -187,7 +183,7 @@ function Transactions({
                                             <td>{formatDate(transaction.date)}</td>
                                             <td>{transaction.type}</td>
                                             <td style={{ textAlign: "right" }}>
-                                                {formatMoney(transaction.amount)}
+                                                {formatMoney(transaction.amount, currency)}
                                             </td>
                                             <td>
                                                 <button

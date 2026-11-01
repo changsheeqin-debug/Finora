@@ -1,5 +1,5 @@
 const chartColors = [
-    "#4D8565",
+    "#72b392",
     "#789ACB",
     "#D5A24C",
     "#A28BC7",

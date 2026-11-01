@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 const categories = [
@@ -36,7 +35,8 @@ function TransactionModal({
     isOpen,
     onClose,
     onSave,
-    initialData
+    initialData,
+    currency = "MYR"
 }) {
     const [formData, setFormData] = useState({
         amount: "",
@@ -122,7 +122,9 @@ function TransactionModal({
                     <div className="form-grid">
 
                         <div className="field">
-                            <label htmlFor="txAmount">Amount (RM)</label>
+                            <label htmlFor="txAmount">
+                                    Amount ({currency === "MYR" ? "RM" : currency === "USD" ? "USD ($)" : "SGD ($)"})
+                            </label>
                             <input
                                 id="txAmount"
                                 name="amount"
