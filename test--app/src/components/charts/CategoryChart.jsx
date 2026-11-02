@@ -1,4 +1,7 @@
+
 import { useEffect, useRef, useState } from "react";
+import { formatMoney } from "../../utils/formatMoney";
+
 const chartColors = [
     "#4D8565",
     "#789ACB",
@@ -9,17 +12,20 @@ const chartColors = [
     "#9A9A9A"
 ];
 
-function CategoryChart({ transactions }) {
+function CategoryChart({ transactions, currency, period }) {
     const categoryTotals = transactions
         .filter(
             (transaction) =>
-                transaction.type?.toLowerCase() === "expense" ||
-                transaction.type?.toLowerCase() === "expenses"
+                ["expense", "expenses"].includes(
+                    transaction.type?.toLowerCase()
+                )
         )
         .reduce((result, transaction) => {
             const category = transaction.category;
+
             result[category] =
-                (result[category] || 0) + Number(transaction.amount);
+                (result[category] || 0) + Number(transaction.amount || 0);
+
             return result;
         }, {});
 
@@ -31,6 +37,7 @@ function CategoryChart({ transactions }) {
         ...chartCategories.map((item) => item[1]),
         1
     );
+
     const chartRef = useRef(null);
     const [chartWidth, setChartWidth] = useState(600);
 
@@ -51,7 +58,11 @@ function CategoryChart({ transactions }) {
             <div className="card-title">
                 <div>
                     <h2>Spending by category</h2>
-                    <p>All recorded expenses by category</p>
+                    <p>
+                        {period === "all"
+                            ? "All recorded expenses by category"
+                            : "Expenses by category for selected month"}
+                    </p>
                 </div>
             </div>
 
@@ -60,7 +71,8 @@ function CategoryChart({ transactions }) {
                     <svg viewBox="0 0 600 230" preserveAspectRatio="none">
                         {chartCategories.map(([category, amount], index) => {
                             const y = 12 + index * 43;
-                            const barWidth = (amount / maxAmount) * 390 * (chartWidth / 600);
+                            const barWidth =
+                                (amount / maxAmount) * 390 * (chartWidth / 600);
 
                             return (
                                 <g key={category}>
@@ -83,14 +95,14 @@ function CategoryChart({ transactions }) {
                                         rx="5"
                                         fill={chartColors[index % chartColors.length]}
                                     />
- 
+
                                     <text
                                         x={Math.min(160 + barWidth + 8, 585)}
                                         y={y + 14}
                                         fontSize="11"
                                         fill="currentColor"
                                     >
-                                        {amount.toFixed(2)}
+                                        {formatMoney(amount, currency)}
                                     </text>
                                 </g>
                             );

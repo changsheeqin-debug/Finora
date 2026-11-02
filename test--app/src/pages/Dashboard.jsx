@@ -60,6 +60,21 @@ function Dashboard({
         0
     );
 
+        // Get income transactions.
+    const income = selectedTransactions.filter(
+        (transaction) => transaction.type?.toLowerCase() === "income"
+    );
+
+    // Calculate total income.
+    const totalIncome = income.reduce(
+        (total, transaction) =>
+            total + Number(transaction.amount || 0),
+        0
+    );
+
+    // Calculate net balance.
+    const netBalance = totalIncome - totalSpent;
+
     // Calculate spending by category.
     const categoryTotals = expenses.reduce((result, transaction) => {
         const category = transaction.category;
@@ -77,7 +92,7 @@ function Dashboard({
 
     // Calculate spending by payment method.
     const methodTotals = expenses.reduce((result, transaction) => {
-        const method = transaction.method;
+        const method = transaction.method || transaction.paymentMethod || "Other";
 
         result[method] =
             (result[method] || 0) + Number(transaction.amount || 0);
@@ -202,18 +217,48 @@ function Dashboard({
                             : "No expenses recorded"}
                     </div>
                 </div>
+
+                <div className="card">
+                    <div className="stat-head">
+                        Total income <span className="stat-icon">↙</span>
+                    </div>
+
+                    <div className="stat-value">
+                        {formatMoney(totalIncome, currency)}
+                    </div>
+
+                    <div className="stat-foot">
+                        For selected period
+                    </div>
+                </div>
+
+                <div className="card">
+                    <div className="stat-head">
+                        Net balance <span className="stat-icon">◈</span>
+                    </div>
+
+                    <div className="stat-value">
+                        {formatMoney(netBalance, currency)}
+                    </div>
+
+                    <div className="stat-foot">
+                        Income minus expenses
+                    </div>
+                </div>
             </div>
 
             {/* Charts */}
             <div className="grid two-col">
-                <CategoryChart 
-                transactions={transactions}
-                currency={currency} 
+                <CategoryChart
+                    transactions={selectedTransactions}
+                    currency={currency}
+                    period={dashPeriod}
                 />
 
                 <PaymentMethodChart
                     transactions={selectedTransactions}
                     period={dashPeriod}
+                    currency={currency}
                 />
             </div>
 

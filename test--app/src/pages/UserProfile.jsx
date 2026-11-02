@@ -5,9 +5,9 @@ function UserProfile({
     user,
     profileDraft,
     onUpdateProfileDraft,
-    onUpdateUser,
     onUnsavedChange,
-    onRequestDiscard
+    onRequestDiscard,
+    onSaveProfile
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [savedMessage, setSavedMessage] = useState("");
@@ -28,18 +28,19 @@ function UserProfile({
         }));
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
 
-        onUpdateUser({ ...profileDraft });
-        onUpdateProfileDraft({ ...profileDraft });
-        onUnsavedChange(false);
-        setIsEditing(false);
-        setSavedMessage("Profile updated successfully.");
+        const success = await onSaveProfile();
 
-        setTimeout(() => {
-            setSavedMessage("");
-        }, 3000);
+        if (success) {
+            setIsEditing(false);
+            setSavedMessage("Profile updated successfully.");
+
+            setTimeout(() => {
+                setSavedMessage("");
+            }, 3000);
+        }
     };
 
     const handleCancel = () => {

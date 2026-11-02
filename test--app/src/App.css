@@ -1230,7 +1230,7 @@ td:first-child,th:first-child { padding-left:0; }
 
 .account-card.current-account {
     border-color: var(--accent-color);
-    background: var(--accent-light);
+    background: var(--site-on-background);
 }
 
 .account-card-info {
@@ -1379,75 +1379,100 @@ td:first-child,th:first-child { padding-left:0; }
     }
 }
 
-/* Account Selection Cards */
 
-.account-list {
+/* Switch Account */
+
+.switch-account-card {
+    width: 100%;
+    max-width: 430px;
+}
+
+.switch-account-card h1 {
+    margin-bottom: 8px;
+}
+
+.switch-account-card .auth-description {
+    margin-bottom: 24px;
+}
+
+/* Current Account */
+
+.current-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 24px;
+
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--accent-light);
+    color: var(--text-primary);
+
+    cursor: default;
+    text-align: left;
+}
+
+.current-account .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+
+    background: var(--bg-primary);
+    color: var(--accent-color);
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.current-account .account-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.current-account .account-card-info strong {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.current-account .account-card-info small {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.account-check {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Form */
+
+.switch-account-card form {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.account-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    padding: 17px;
-
-    border: 1.5px solid rgb(53, 134, 84);
-    border-radius: 12px;
-
-    background: var(--bg-primary);
-    color: var(--text-primary);
-
-    cursor: pointer;
-    text-align: left;
-
-    transition: all 0.2s ease;
-}
-
-.account-card:hover {
-    border-color: var(--accent-color);
-    transform: translateY(-2px);
-}
-
-/* Highlight Current Account */
-
-.account-card.current-account {
-    border: 2px solid var(--accent-color);
-    background: light-dark(#468064, #a2ceb2);
-    box-shadow: 0 0 0 2px var(--accent-light);
-}
-
-.account-card-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.account-card-info strong {
-    font-size: 14px;
+.switch-account-card form label {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.account-card-info small {
-    font-size: 12px;
-    color: var(--text-secondary);
+.switch-account-card form input {
+    box-sizing: border-box;
 }
 
-/* Selected Account Checkmark */
-
-.account-check {
-    display: flex;
-    align-items: center;
-    justify-content: left;
-
-    border-radius: 50%;
-    background: var(--accent-color);
-    color: white;
-
-    font-size: 14px;
-    font-weight: 700;
-    
+.switch-account-card .auth-back-button {
+    margin-top: 22px;
 }
-

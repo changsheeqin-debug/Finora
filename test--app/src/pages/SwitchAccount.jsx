@@ -1,20 +1,5 @@
 
-import { useState } from "react";
-
-function SwitchAccount({ user, onBack, onSelectAccount, onAddAccount }) {
-    const [accounts] = useState([
-        {
-            id: 1,
-            name: "Jamie Doe",
-            email: "jamie@example.com"
-        },
-        {
-            id: 2,
-            name: "Alex Tan",
-            email: "alex@example.com"
-        }
-    ]);
-
+function SwitchAccount({ user, onBack, onAddAccount }) {
     const getInitials = (name) =>
         name
             .split(" ")
@@ -33,50 +18,43 @@ function SwitchAccount({ user, onBack, onSelectAccount, onAddAccount }) {
                 </div>
 
                 <h1>Switch account</h1>
+
                 <p className="auth-description">
-                    Choose an account to continue to Finora.
+                    Choose an account to continue.
                 </p>
 
                 <div className="account-list">
-                    {accounts.map((account) => {
-                        const isCurrent = account.email === user.email;
+                    {user && (
+                        <div className="account-card current-account">
+                            <div className="avatar">
+                                {getInitials(user.name)}
+                            </div>
 
-                        return (
-                            <button
-                                key={account.id}
-                                className={`account-card ${
-                                    isCurrent ? "current-account" : ""
-                                }`}
-                                onClick={() => onSelectAccount(account)}
-                            >
-                                <div className="avatar">
-                                    {getInitials(account.name)}
-                                </div>
+                            <div className="account-card-info">
+                                <strong>{user.name}</strong>
+                                <small>{user.email}</small>
+                            </div>
 
-                                <div className="account-card-info">
-                                    <strong>{account.name}</strong>
-                                    <small>{account.email}</small>
-                                </div>
-
-                                {isCurrent && (
-                                    <span className="account-check">
-                                        Signed In
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
+                            <span className="current-account-label">
+                                Current
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-
                 <button
+                    type="button"
                     className="add-account-button"
                     onClick={onAddAccount}
                 >
-                    + Add another account
+                    + Add Account
                 </button>
 
-                <button className="auth-back-button" onClick={onBack}>
+                <button
+                    type="button"
+                    className="auth-back-button"
+                    onClick={onBack}
+                >
                     Back to Dashboard
                 </button>
             </div>

@@ -1,3 +1,6 @@
+
+import { formatMoney } from "../../utils/formatMoney";
+
 const chartColors = [
     "#72b392",
     "#789ACB",
@@ -8,17 +11,20 @@ const chartColors = [
     "#9A9A9A"
 ];
 
-function PaymentMethodChart({ transactions, period }) {
+function PaymentMethodChart({ transactions, period, currency }) {
     const expenses = transactions.filter(
         (transaction) =>
-            transaction.type?.toLowerCase() === "expense" ||
-            transaction.type?.toLowerCase() === "expenses"
+            ["expense", "expenses"].includes(
+                transaction.type?.toLowerCase()
+            )
     );
 
     const methodTotals = expenses.reduce((result, transaction) => {
-        const method = transaction.method;
+        const method =
+            transaction.method || transaction.paymentMethod || "Other";
+
         result[method] =
-            (result[method] || 0) + Number(transaction.amount);
+            (result[method] || 0) + Number(transaction.amount || 0);
 
         return result;
     }, {});
@@ -27,16 +33,11 @@ function PaymentMethodChart({ transactions, period }) {
         .sort((a, b) => b[1] - a[1]);
 
     const donutTotal = sortedMethods.reduce(
-        (sum, item) => sum + item[1], 0
+        (sum, item) => sum + item[1],
+        0
     );
 
     const circumference = 2 * Math.PI * 55;
-
-    const formatMoney = (amount) =>
-        `RM ${amount.toLocaleString("en-MY", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
 
     let donutOffset = 0;
 
@@ -107,7 +108,7 @@ function PaymentMethodChart({ transactions, period }) {
                                 fontWeight="bold"
                                 fill="currentColor"
                             >
-                                {formatMoney(donutTotal).replace("RM ", "")}
+                                {formatMoney(donutTotal, currency)}
                             </text>
                         </>
                     ) : (

@@ -1,18 +1,38 @@
 
 import { useState } from "react";
+import { loginUser } from "../services/api";
 
 function Login({ onLogin }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!email.trim() || !password.trim()) {
             return;
         }
 
-        onLogin(email);
+        try {
+            setError("");
+            setLoading(true);
+
+            // Call backend login API
+            const data = await loginUser(email, password);
+
+            // Save JWT token
+            localStorage.setItem("token", data.token);
+
+            // Pass authenticated user to App.jsx
+            onLogin(data.user);
+
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -47,13 +67,21 @@ function Login({ onLogin }) {
                         required
                     />
 
-                    <button type="submit" className="auth-submit-button">
-                        Sign In
+                    {error && (
+                        <p className="auth-error">{error}</p>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="auth-submit-button"
+                        disabled={loading}
+                    >
+                        {loading ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
 
                 <small className="auth-note">
-                    Demo sign-in only. Authentication will be connected later.
+                    Securely sign in to your Finora account.
                 </small>
             </div>
         </div>
