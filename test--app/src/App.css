@@ -99,9 +99,24 @@ select:focus,input:focus,textarea:focus { border-color:var(--site-primary);box-s
 .legend { display:flex;flex-wrap:wrap;gap:15px;margin-top:10px; }
 .legend span { display:flex;align-items:center;gap:6px;color:light-dark(#77847B,#A1AEA4);font-size:10px; }
 .dot { width:7px;height:7px;border-radius:50%;display:inline-block; }
-.payment-layout { display:flex;align-items:center;gap:100px;min-height:210px;padding: 20px; }
-.donut { width:180px;height:180px;flex:none; }
-.payment-legend { display:grid;gap:13px;flex:1;min-width:0; }
+.payment-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.donut {
+    width: 160px;
+    height: 160px;
+    flex-shrink: 0;
+}
+
+.payment-legend {
+    flex: 1;
+    min-width: 0;
+}
 .payment-row { display:flex;justify-content:space-between;gap:10px;font-size:11px; }
 .payment-row .name { display:flex;align-items:center;gap:7px;color:light-dark(#6F7D73,#A2AFA5); }
 .payment-row strong { font-weight:650; }
@@ -1654,4 +1669,14 @@ td:first-child,th:first-child { padding-left:0; }
 
 .finora-success-toast .Toastify__close-button:hover {
     opacity: 1;
+}
+@media (max-width: 1200px) {
+    .payment-layout {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .payment-legend {
+        width: 100%;
+    }
 }
