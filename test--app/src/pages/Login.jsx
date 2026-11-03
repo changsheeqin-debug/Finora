@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { loginUser } from "../services/api";
 
-function Login({ onLogin, onBack, showBackButton, onSignUp }) {
+function Login({ onLogin, onBack, showBackButton, onSignUp, onForgotPassword }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -76,6 +76,12 @@ function Login({ onLogin, onBack, showBackButton, onSignUp }) {
                         {loading ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
+
+                <p className="signup-link">
+                    <button type="button" onClick={onForgotPassword}>
+                        Forgot password?
+                    </button>
+                </p>
 
                 <small className="auth-note">
                     Securely sign in to your Finora account.

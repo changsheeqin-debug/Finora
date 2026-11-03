@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const categories = [
+const expenseCategories = [
     "Food",
     "Transport",
     "Shopping",
@@ -9,9 +9,13 @@ const categories = [
     "Health",
     "Education",
     "Personal Care",
-    "Salary",
     "Other"
 ];
+
+const categoriesByType = {
+    Expenses: expenseCategories,
+    Income: ["Salary", "Other"]
+};
 
 const methods = [
     "Cash",
@@ -46,6 +50,7 @@ function TransactionModal({
         method: "Cash",
         note: ""
     });
+    const categories = categoriesByType[formData.type] || expenseCategories;
 
     // Populate the form when adding or editing
     useEffect(() => {
@@ -55,7 +60,10 @@ function TransactionModal({
                     amount: initialData.amount,
                     date: initialData.date,
                     type: initialData.type,
-                    category: initialData.category,
+                    category: (categoriesByType[initialData.type] || expenseCategories)
+                        .includes(initialData.category)
+                        ? initialData.category
+                        : (categoriesByType[initialData.type] || expenseCategories)[0],
                     method: initialData.method,
                     note: initialData.note || ""
                 });
@@ -75,10 +83,21 @@ function TransactionModal({
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+        if (name === "type") {
+            const nextCategories = categoriesByType[value] || expenseCategories;
+            setFormData({
+                ...formData,
+                type: value,
+                category: nextCategories.includes(formData.category)
+                    ? formData.category
+                    : nextCategories[0]
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
     };
 
     const handleSubmit = (e) => {

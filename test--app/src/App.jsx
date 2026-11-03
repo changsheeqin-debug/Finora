@@ -14,6 +14,7 @@ import NotificationDropdown from "./components/NotificationDropdown";
 import SwitchAccount from "./pages/SwitchAccount";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 import { getCurrentUser, 
         getUserProfile,
@@ -34,6 +35,9 @@ import { getCurrentUser,
         markNotificationAsRead,
         markAllNotificationsAsRead
 } from "./services/api";
+
+const initialResetToken =
+    new URLSearchParams(window.location.search).get("resetToken") || "";
 
     const mapTransaction = (transaction) => {
         const transactionDate = transaction.transaction_date || transaction.date;
@@ -62,7 +66,9 @@ import { getCurrentUser,
 function App() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [activePage, setActivePage] = useState("login");
+    const [activePage, setActivePage] = useState(
+        initialResetToken ? "forgot-password" : "login"
+    );
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const [transactions, setTransactions] = useState([]);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -392,14 +398,16 @@ function App() {
 
                 await loadUserSettings();
 
-                setActivePage("dashboard");
+                if (!initialResetToken) {
+                    setActivePage("dashboard");
+                }
 
             } catch (error) {
                 console.error("Session restoration failed:", error);
 
                 localStorage.removeItem("token");
                 setUser(null);
-                setActivePage("login");
+                setActivePage(initialResetToken ? "forgot-password" : "login");
 
             } finally {
                 setIsAuthLoading(false);
@@ -597,7 +605,9 @@ function App() {
 };
 
     const isAuthPage =
-        activePage === "login" || activePage === "switch-account";
+        activePage === "login" ||
+        activePage === "switch-account" ||
+        activePage === "forgot-password";
 
 
     const handleSaveProfile = async () => {
@@ -741,6 +751,15 @@ function App() {
                         showBackButton={Boolean(user)}
                         onBack={() => setActivePage("switch-account")}
                         onSignUp={() => setActivePage("register")}
+                        onForgotPassword={() => setActivePage("forgot-password")}
+                    />
+                );
+
+            case "forgot-password":
+                return (
+                    <ForgotPassword
+                        resetToken={initialResetToken}
+                        onBackToLogin={() => setActivePage("login")}
                     />
                 );
 

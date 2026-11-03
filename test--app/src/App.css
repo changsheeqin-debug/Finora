@@ -2216,6 +2216,12 @@ th:first-child {
     font-size: 13px;
 }
 
+.auth-error {
+    margin-top: 12px;
+    color: #dc2626;
+    font-size: 13px;
+}
+
 
 /* Toast notifications */
 

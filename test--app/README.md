@@ -14,3 +14,14 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Password reset
+
+Apply `database/migrations/20261104_create_password_reset_tokens.sql` to the
+Finora MySQL database before using password resets. Configure the backend with
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM`. Set
+`FRONTEND_URL` to the public URL of the Finora frontend (for local development,
+`http://localhost:5173`). SMTP port 465 uses implicit TLS; other ports use
+STARTTLS when supported by the mail server.
+
+Reset links expire after 15 minutes and can only be used once.

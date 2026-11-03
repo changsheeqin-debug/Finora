@@ -1,6 +1,14 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const {
+    isEmailConfigured,
+    sendPasswordResetEmail
+} = require("../utils/passwordResetMailer");
+
+const passwordResetMessage =
+    "If an account exists for that email, a password reset link has been sent.";
 
 // Register a new user
 const registerUser = async (req, res) => {
@@ -185,7 +193,144 @@ const loginUser = async (req, res) => {
     }
 };
 
+const requestPasswordReset = async (req, res) => {
+    try {
+        const email = typeof req.body?.email === "string"
+            ? req.body.email.trim().toLowerCase()
+            : "";
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({
+                message: "Please enter a valid email address."
+            });
+        }
+
+        if (!isEmailConfigured()) {
+            console.error("Password reset email is unavailable: SMTP is not configured.");
+            return res.status(503).json({
+                message: "Password reset is temporarily unavailable. Please try again later."
+            });
+        }
+
+        const [users] = await db.execute(
+            "SELECT user_id, email FROM users WHERE email = ?",
+            [email]
+        );
+
+        if (users.length === 0) {
+            return res.status(200).json({ message: passwordResetMessage });
+        }
+
+        const user = users[0];
+        const token = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+        await db.execute(
+            `DELETE FROM password_reset_tokens
+             WHERE user_id = ? OR expires_at <= NOW()`,
+            [user.user_id]
+        );
+        await db.execute(
+            `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))`,
+            [user.user_id, tokenHash]
+        );
+
+        const resetUrl = new URL(process.env.FRONTEND_URL || "http://localhost:5173");
+        resetUrl.searchParams.set("resetToken", token);
+
+        try {
+            await sendPasswordResetEmail(user.email, resetUrl.toString());
+        } catch (error) {
+            await db.execute(
+                "DELETE FROM password_reset_tokens WHERE token_hash = ?",
+                [tokenHash]
+            );
+            throw error;
+        }
+
+        return res.status(200).json({ message: passwordResetMessage });
+    } catch (error) {
+        console.error("Password reset request error:", error.message);
+        return res.status(500).json({
+            message: "Something went wrong while requesting a password reset."
+        });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token, password } = req.body || {};
+
+    if (typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token)) {
+        return res.status(400).json({
+            message: "This password reset link is invalid or has expired."
+        });
+    }
+
+    if (typeof password !== "string" || password.length < 8) {
+        return res.status(400).json({
+            message: "Password must be at least 8 characters long."
+        });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    let connection;
+
+    try {
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const [tokens] = await connection.execute(
+            `SELECT user_id
+             FROM password_reset_tokens
+             WHERE token_hash = ?
+               AND expires_at > NOW()
+               AND used_at IS NULL
+             FOR UPDATE`,
+            [tokenHash]
+        );
+
+        if (tokens.length === 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                message: "This password reset link is invalid or has expired."
+            });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const userId = tokens[0].user_id;
+
+        await connection.execute(
+            "UPDATE users SET password_hash = ? WHERE user_id = ?",
+            [passwordHash, userId]
+        );
+        await connection.execute(
+            "DELETE FROM password_reset_tokens WHERE user_id = ?",
+            [userId]
+        );
+        await connection.commit();
+
+        return res.status(200).json({
+            message: "Your password has been reset. You can now sign in."
+        });
+    } catch (error) {
+        if (connection) {
+            await connection.rollback();
+        }
+        console.error("Password reset error:", error.message);
+        return res.status(500).json({
+            message: "Something went wrong while resetting your password."
+        });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+};
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    requestPasswordReset,
+    resetPassword
 };

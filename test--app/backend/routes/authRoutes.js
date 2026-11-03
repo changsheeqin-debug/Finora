@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { registerUser, loginUser } = require("../controllers/authController");
+const {
+    registerUser,
+    loginUser,
+    requestPasswordReset,
+    resetPassword
+} = require("../controllers/authController");
 
 const verifyToken = require("../middleware/authMiddleware");
 
@@ -10,6 +15,10 @@ router.post("/register", registerUser);
 
 // POST /api/auth/login
 router.post("/login", loginUser);
+
+// Request and complete a password reset
+router.post("/forgot-password", requestPasswordReset);
+router.post("/reset-password", resetPassword);
 
 // Protected route - get current logged-in user
 //GET	/api/auth/me

@@ -42,6 +42,20 @@ export const registerUser = (name, email, password) => {
     });
 };
 
+export const requestPasswordReset = (email) => {
+    return apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email })
+    });
+};
+
+export const resetPassword = (token, password) => {
+    return apiRequest("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, password })
+    });
+};
+
 // Get currently authenticated user
 export const getCurrentUser = () => {
     return apiRequest("/auth/me");
