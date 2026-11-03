@@ -36,7 +36,7 @@ function NotificationDropdown({
 
                 {unreadCount > 0 && (
                     <span className="notification-count">
-                        {unreadCount}
+                        {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                 )}
             </button>

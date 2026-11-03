@@ -1,5 +1,14 @@
 const db = require("../config/db");
 const { randomUUID } = require("crypto");
+const { createUserNotification } = require("../utils/notificationHelper");
+
+const formatTransactionDate = (date) => {
+    return new Date(`${date}T00:00:00`).toLocaleDateString("en-MY", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    });
+};
 
 // Get all transactions belonging to the logged-in user
 const getTransactions = async (req, res) => {
@@ -7,7 +16,17 @@ const getTransactions = async (req, res) => {
         const userId = req.user.userId;
 
         const [transactions] = await db.execute(
-            `SELECT *
+            `SELECT
+                transaction_id,
+                user_id,
+                amount,
+                type,
+                category,
+                payment_method,
+                DATE_FORMAT(transaction_date, '%Y-%m-%d') AS transaction_date,
+                note,
+                created_at,
+                updated_at
              FROM transactions
              WHERE user_id = ?
              ORDER BY transaction_date DESC, created_at DESC`,
@@ -110,6 +129,22 @@ const createTransaction = async (req, res) => {
                 date,
                 typeof note === "string" ? note.trim() || null : null
             ]
+        );
+
+        const notificationTitle = type === "Income"
+            ? "Income Transaction Added"
+            : "Expense Transaction Added";
+
+        const notificationMessage =
+            `${type} of RM${Number(amount).toFixed(2)} has been recorded under ${category} ` +
+            `using ${paymentMethod} on ${formatTransactionDate(date)}.` +
+            (note ? ` Note: ${note}` : "");
+
+        await createUserNotification(
+            userId,
+            notificationTitle,
+            notificationMessage,
+            "transaction_notifications"
         );
 
         return res.status(201).json({
@@ -232,6 +267,19 @@ const updateTransaction = async (req, res) => {
             ]
         );
 
+        const notificationMessage =
+            `Your ${type.toLowerCase()} transaction of RM${Number(amount).toFixed(2)} ` +
+            `under ${category}, paid through ${paymentMethod} on ${formatTransactionDate(date)}, ` +
+            `has been updated.` +
+            (note ? ` Note: ${note}` : "");
+
+        await createUserNotification(
+            userId,
+            "Transaction Updated",
+            notificationMessage,
+            "transaction_notifications"
+        );
+
         return res.status(200).json({
             message: "Transaction updated successfully!"
         });
@@ -252,18 +300,36 @@ const deleteTransaction = async (req, res) => {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        const [result] = await db.execute(
-            `DELETE FROM transactions
-             WHERE transaction_id = ? AND user_id = ?`,
-            [id, userId]
-        );
+    const [transactions] = await db.execute(
+        `SELECT amount, type, category, payment_method, transaction_date, note
+        FROM transactions
+        WHERE transaction_id = ? AND user_id = ?`,
+        [id, userId]
+    );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                message: "Transaction not found."
-            });
-        }
+    if (transactions.length === 0) {
+        return res.status(404).json({
+            message: "Transaction not found."
+        });
+    }
 
+    const transaction = transactions[0];
+
+    const [result] = await db.execute(
+        "DELETE FROM transactions WHERE transaction_id = ? AND user_id = ?",
+        [id, userId]
+    );
+
+    await createUserNotification(
+        userId,
+        "Transaction Deleted",
+        `Your ${transaction.type.toLowerCase()} of RM${Number(transaction.amount).toFixed(2)} ` +
+        `under ${transaction.category}, paid through ${transaction.payment_method} ` +
+        `on ${formatTransactionDate(transaction.transaction_date.toISOString().slice(0, 10))}, ` +
+        `has been deleted.` +
+        (transaction.note ? ` Note: ${transaction.note}` : ""),
+        "transaction_notifications"
+    );
         return res.status(200).json({
             message: "Transaction deleted successfully!"
         });

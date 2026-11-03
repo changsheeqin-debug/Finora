@@ -1,5 +1,12 @@
-
+const { createUserNotification } = require("../utils/notificationHelper");
 const db = require("../config/db");
+
+const formatAmount = (amount) => {
+    return `RM${Number(amount).toLocaleString("en-MY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
+};
 
 // GET all savings goals belonging to the logged-in user
 const getSavingsGoals = async (req, res) => {
@@ -102,6 +109,13 @@ const createSavingsGoal = async (req, res) => {
             ]
         );
 
+        await createUserNotification(
+            req.user.userId,
+            "Savings Goal Created",
+            `Your savings goal "${goalName.trim()}" has been created successfully. Your target is ${formatAmount(targetAmount)}, and you've already saved ${formatAmount(currentSaved)} (${((Number(currentSaved) / Number(targetAmount)) * 100).toFixed(1)}% of your goal).`,
+            "goal_reminders"
+        );
+
         res.status(201).json({
             message: "Savings goal created successfully!",
             goal: {
@@ -183,7 +197,9 @@ const updateSavingsGoal = async (req, res) => {
 
         // Check whether this goal belongs to the logged-in user
         const [existingGoals] = await db.execute(
-            "SELECT goal_id FROM savings_goals WHERE goal_id = ? AND user_id = ?",
+            `SELECT goal_id, goal_name, target_amount, current_saved
+            FROM savings_goals
+            WHERE goal_id = ? AND user_id = ?`,
             [id, req.user.userId]
         );
 
@@ -193,6 +209,14 @@ const updateSavingsGoal = async (req, res) => {
             });
         }
 
+        const previousGoal = existingGoals[0];
+
+        const previousProgress =
+            (Number(previousGoal.current_saved) / Number(previousGoal.target_amount)) * 100;
+
+        const currentProgress =
+            (Number(currentSaved) / Number(targetAmount)) * 100;
+            
         const status = Number(currentSaved) >= Number(targetAmount)
             ? "Completed"
             : "Active";
@@ -216,6 +240,34 @@ const updateSavingsGoal = async (req, res) => {
             ]
         );
 
+        // Notify user that the goal was updated
+        await createUserNotification(
+            req.user.userId,
+            "Savings Goal Updated",
+            `Your savings goal "${goalName.trim()}" has been updated. Your current savings are ${formatAmount(currentSaved)} out of ${formatAmount(targetAmount)} (${currentProgress.toFixed(1)}% completed).`,
+            "goal_reminders"
+        );
+
+        // Check whether the user has reached a new milestone
+        const milestones = [25, 50, 75, 100];
+
+        for (const milestone of milestones) {
+            if (
+                previousProgress < milestone &&
+                currentProgress >= milestone
+            ) {
+                await createUserNotification(
+                    req.user.userId,
+                    milestone === 100
+                        ? "Savings Goal Completed!"
+                        : `${milestone}% Savings Milestone Reached!`,
+                    milestone === 100
+                        ? `Congratulations! You've reached your target for "${goalName.trim()}"! You've saved ${formatAmount(currentSaved)} out of ${formatAmount(targetAmount)}. Your savings goal is now complete!`
+                        : `Great progress! You've reached ${milestone}% of your "${goalName.trim()}" savings goal. You've saved ${formatAmount(currentSaved)} out of ${formatAmount(targetAmount)}. Keep going towards your target!`,
+                    "goal_reminders"
+                );
+            }
+        }
         res.status(200).json({
             message: "Savings goal updated successfully!"
         });

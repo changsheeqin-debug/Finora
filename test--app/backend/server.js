@@ -7,8 +7,9 @@ const authRoutes = require("./routes/authRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const savingsGoalRoutes = require("./routes/savingsGoalRoutes");
 const userRoutes = require("./routes/userRoutes");
-
+const notificationRoutes = require("./routes/notificationRoutes");
 const app = express();
+
 
 // Middleware
 app.use(cors());
@@ -19,6 +20,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/savings-goals", savingsGoalRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Test route
 app.get("/", (req, res) => {

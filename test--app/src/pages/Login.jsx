@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { loginUser } from "../services/api";
 
-function Login({ onLogin }) {
+function Login({ onLogin, onBack, showBackButton, onSignUp }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -19,13 +19,10 @@ function Login({ onLogin }) {
             setError("");
             setLoading(true);
 
-            // Call backend login API
             const data = await loginUser(email, password);
 
-            // Save JWT token
             localStorage.setItem("token", data.token);
 
-            // Pass authenticated user to App.jsx
             onLogin(data.user);
 
         } catch (error) {
@@ -83,6 +80,24 @@ function Login({ onLogin }) {
                 <small className="auth-note">
                     Securely sign in to your Finora account.
                 </small>
+
+                <p className="signup-link">
+                    Don't have an account?{" "}
+                    <button type="button" onClick={onSignUp}>
+                        Sign Up
+                    </button>
+                </p>
+
+                {showBackButton && (
+                    <button
+                        type="button"
+                        className="auth-back-button"
+                        onClick={onBack}
+                    >
+                        <span className="back-arrow">←</span>
+                        Back to Switch Account
+                    </button>
+                )}
             </div>
         </div>
     );

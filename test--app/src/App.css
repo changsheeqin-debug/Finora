@@ -5,6 +5,8 @@
     --site-on-primary: #FFFFFF;
     --site-on-secondary: light-dark(#214C37, #C5E3D0);
     --site-on-background: light-dark(#1C2921, #E8F0EB);
+    --account-card: light-dark(#64a393, #43693a);
+    --account-card-current: light-dark(#163123, #ffffff);
   --site-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --site-font-heading: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --site-heading-scale: 1;
@@ -86,15 +88,12 @@ select, .field input, .field textarea { border:1px solid light-dark(#E1E8E2,#344
 select:focus,input:focus,textarea:focus { border-color:var(--site-primary);box-shadow:0 0 0 3px #28664718; }
 .chart-wrap {
     width: 100%;
-    height: 220px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: hidden;
 }
 
 .chart-wrap svg {
     width: 100%;
-    min-width: 600px;
-    height: 220px;
+    height: auto;
     display: block;
 }
 .legend { display:flex;flex-wrap:wrap;gap:15px;margin-top:10px; }
@@ -840,6 +839,25 @@ td:first-child,th:first-child { padding-left:0; }
     font-size: 18px;
 }
 
+.notification-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 3px;
+    border-radius: 50px;
+    background-color: #E53935;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--site-background);
+    box-sizing: border-box;
+}
+
 
 @media (max-width: 700px) {
     .app-header {
@@ -1198,12 +1216,21 @@ td:first-child,th:first-child { padding-left:0; }
     color: var(--text-secondary);
 }
 
-/* Account Selection */
+
+/* ========================================
+   Account Selection & Remembered Accounts
+======================================== */
 
 .account-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.account-card-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .account-card {
@@ -1213,10 +1240,10 @@ td:first-child,th:first-child { padding-left:0; }
     width: 100%;
     padding: 15px;
 
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--account-card);
     border-radius: 12px;
 
-    background: var(--bg-primary);
+    background: var(--site-font-heading);
     color: var(--text-primary);
 
     cursor: pointer;
@@ -1228,9 +1255,31 @@ td:first-child,th:first-child { padding-left:0; }
     border-color: var(--accent-color);
 }
 
+.account-card:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
 .account-card.current-account {
-    border-color: var(--accent-color);
-    background: var(--site-on-background);
+    border-color: transparent;
+    background: var(--account-card-current);
+}
+
+.account-card .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+
+    background: var(--bg-secondary);
+    color: var(--accent-color);
+
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .account-card-info {
@@ -1238,6 +1287,7 @@ td:first-child,th:first-child { padding-left:0; }
     flex-direction: column;
     gap: 5px;
     flex: 1;
+    min-width: 0;
 }
 
 .account-card-info strong {
@@ -1248,27 +1298,61 @@ td:first-child,th:first-child { padding-left:0; }
 .account-card-info small {
     font-size: 12px;
     color: var(--text-secondary);
+    overflow-wrap: anywhere;
 }
 
 .current-account-label {
+    flex-shrink: 0;
     font-size: 12px;
     font-weight: 600;
     color: var(--accent-color);
 }
 
 .account-select-arrow {
+    flex-shrink: 0;
+    padding-right: 24px;
+    font-size: 30px;
     color: var(--text-secondary);
 }
 
-.add-account-button {
-    width: 100%;
-    margin-top: 18px;
-    padding: 13px;
+/* Remove Account Button */
 
-    border: 1px dashed rgb(65, 131, 110);
+.remove-account-button {
+    position: absolute;
+    right: 10px;
+    top: 2px;
+
+    width: 22px;
+    height: 22px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.remove-account-button:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Add Account Button */
+
+.add-account-button {
+    display: block;
+    width: 70%;
+    margin: 18px auto 0;
+    padding: 12px;
+
+    border: 1px;
     border-radius: 10px;
 
-    background: transparent;
+    background: light-dark( #3a6b4b,#ffffff);
     color: var(--text-primary);
 
     font: inherit;
@@ -1281,25 +1365,63 @@ td:first-child,th:first-child { padding-left:0; }
     border-color: var(--accent-color);
 }
 
-.auth-back-button {
-    display: block;
-    margin: 22px auto 0;
-    padding: 8px;
+/* ========================================
+   Switch Account Page
+======================================== */
 
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
+.switch-account-card {
+    width: 100%;
+    max-width: 430px;
+}
+
+.switch-account-card h1 {
+    margin-bottom: 8px;
+}
+
+.switch-account-card .auth-description {
+    margin-bottom: 24px;
+}
+
+.switch-account-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.switch-account-card form label {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.switch-account-card form input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px 14px;
+
+    border: 2px solid rgb(53, 134, 84);
+    border-radius: 9px;
+    outline: none;
+
+    background: var(--bg-primary);
+    color: var(--text-primary);
 
     font: inherit;
-    font-size: 13px;
-    cursor: pointer;
+    font-size: 14px;
 }
 
-.auth-back-button:hover {
-    color: var(--accent-color);
+.switch-account-card form input:focus {
+    border-color: var(--accent-color);
 }
 
-/* Login */
+.switch-account-card .auth-back-button {
+    margin-top: 22px;
+}
+
+/* ========================================
+   Login Page
+======================================== */
 
 .login-card form {
     display: flex;
@@ -1329,7 +1451,8 @@ td:first-child,th:first-child { padding-left:0; }
     font-size: 14px;
 }
 
-.login-card form input::placeholder {
+.login-card form input::placeholder,
+.switch-account-card form input::placeholder {
     color: var(--text-secondary);
 }
 
@@ -1367,7 +1490,39 @@ td:first-child,th:first-child { padding-left:0; }
     font-size: 11px;
 }
 
-/* Smaller Screens */
+/* ========================================
+   Shared Authentication Buttons
+======================================== */
+
+.auth-back-button {
+    display: block;
+    margin: 22px auto 0;
+    padding: 12px;
+
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: var(--text-secondary);
+
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.auth-back-button:hover {
+    color: var(--accent-color);
+}
+
+.back-arrow {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* ========================================
+   Smaller Screens
+======================================== */
 
 @media (max-width: 480px) {
     .auth-page {
@@ -1379,100 +1534,124 @@ td:first-child,th:first-child { padding-left:0; }
     }
 }
 
-
-/* Switch Account */
-
-.switch-account-card {
-    width: 100%;
-    max-width: 430px;
-}
-
-.switch-account-card h1 {
-    margin-bottom: 8px;
-}
-
-.switch-account-card .auth-description {
-    margin-bottom: 24px;
-}
-
-/* Current Account */
-
-.current-account {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 24px;
-
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    background: var(--accent-light);
-    color: var(--text-primary);
-
-    cursor: default;
-    text-align: left;
-}
-
-.current-account .avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-
-    background: var(--bg-primary);
-    color: var(--accent-color);
-
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.current-account .account-card-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.current-account .account-card-info strong {
-    font-size: 14px;
-    color: var(--text-primary);
-}
-
-.current-account .account-card-info small {
-    font-size: 12px;
+.signup-link {
+    margin-top: 16px;
+    text-align: center;
     color: var(--text-secondary);
-    overflow-wrap: anywhere;
-}
-
-.account-check {
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent-color);
-}
-
-/* Form */
-
-.switch-account-card form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.switch-account-card form label {
-    margin-top: 8px;
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
 }
 
-.switch-account-card form input {
-    box-sizing: border-box;
+.signup-link button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent-color);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
-.switch-account-card .auth-back-button {
-    margin-top: 22px;
+.signup-link button:hover {
+    opacity: 0.8;
+}
+.auth-success {
+    margin-top: 12px;
+    color: #16a34a;
+    font-size: 13px;
+}
+
+
+/* ========================================
+   FINORA DELETE CONFIRMATION TOAST
+======================================== */
+
+.delete-confirm-container {
+    width: 320px;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    background: light-dark(#FFFFFF, #17221B) !important;
+    border: 1px solid light-dark(#E6EBE7, #2B3930) !important;
+    color: light-dark(#1C2921, #E8F0EB) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.delete-confirm-toast p {
+    margin: 0 0 16px;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: light-dark(#1C2921, #E8F0EB);
+}
+
+.delete-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.delete-confirm-actions button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: Inter, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Delete button */
+.delete-confirm-btn {
+    background: #286647;
+    color: #FFFFFF;
+    border: 1px solid #286647;
+}
+
+.delete-confirm-btn:hover {
+    background: #214C37;
+    border-color: #214C37;
+}
+
+/* Cancel button */
+.delete-cancel-btn {
+    background: light-dark(#E8F0EB, #26362C);
+    color: light-dark(#214C37, #E8F0EB);
+    border: 1px solid light-dark(#E6EBE7, #2B3930);
+}
+
+.delete-cancel-btn:hover {
+    background: light-dark(#DCE9E0, #34483A);
+}
+
+
+.finora-success-toast {
+    background: light-dark(#FFFFFF, #17221B) !important;
+    color: light-dark(#214C37, #E8F0EB) !important;
+    border: 1px solid light-dark(#DCE9E0, #2B3930) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    box-shadow: 0 4px 16px rgba(33, 76, 55, 0.10) !important;
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Success icon */
+.finora-success-toast .Toastify__toast-icon {
+    color: light-dark(#286647, #8BC6A1);
+}
+
+/* Progress bar */
+.finora-success-toast .Toastify__progress-bar {
+    background: light-dark(#286647, #8BC6A1) !important;
+}
+
+/* Close button */
+.finora-success-toast .Toastify__close-button {
+    color: light-dark(#286647, #8BC6A1);
+    opacity: 0.7;
+}
+
+.finora-success-toast .Toastify__close-button:hover {
+    opacity: 1;
 }

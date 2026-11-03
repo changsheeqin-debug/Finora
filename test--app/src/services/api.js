@@ -1,4 +1,5 @@
 const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL = "http://192.168.1.105:5000/api";
 
 // Reusable API request function
 const apiRequest = async (endpoint, options = {}) => {
@@ -26,6 +27,7 @@ const apiRequest = async (endpoint, options = {}) => {
 
 
 // Authentication APIs
+
 export const loginUser = (email, password) => {
     return apiRequest("/auth/login", {
         method: "POST",
@@ -122,5 +124,29 @@ export const updateUserSettings = (settings) => {
     return apiRequest("/users/settings", {
         method: "PUT",
         body: JSON.stringify(settings)
+    });
+};
+
+// Notifications
+export const getNotifications = () => {
+    return apiRequest("/notifications");
+};
+
+export const createNotification = (notification) => {
+    return apiRequest("/notifications", {
+        method: "POST",
+        body: JSON.stringify(notification)
+    });
+};
+
+export const markNotificationAsRead = (id) => {
+    return apiRequest(`/notifications/${id}/read`, {
+        method: "PUT"
+    });
+};
+
+export const markAllNotificationsAsRead = () => {
+    return apiRequest("/notifications/read-all", {
+        method: "PUT"
     });
 };

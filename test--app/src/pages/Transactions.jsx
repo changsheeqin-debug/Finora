@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { formatMoney } from "../utils/formatMoney";
+import { toast } from "react-toastify";
 
 const categories = [
     "Food", "Transport", "Shopping", "Bills & Utilities",
@@ -68,14 +69,50 @@ function Transactions({
         setMonth("");
     };
 
-    const handleDelete = (transaction) => {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this transaction?"
-        );
-
-        if (confirmed) {
-            onDeleteTransaction(transaction.id);
+    const handleConfirmDeleteTransaction = async (id) => {
+        try {
+            await onDeleteTransaction(id);
+            toast.success("Transaction deleted successfully!", {
+                className: "finora-success-toast",
+                icon: "✓",
+                autoClose: 3000
+            });
+        } catch (error) {
+            console.error("Failed to delete transaction:", error);
+            toast.error(error.message || "Failed to delete transaction.");
         }
+    };
+
+    const handleDeleteTransaction = (id) => {
+        toast.info(
+            <div className="delete-confirm-toast">
+                <p>Are you sure you want to delete this transaction?</p>
+
+                <div className="delete-confirm-actions">
+                    <button
+                        className="delete-confirm-btn"
+                        onClick={() => {
+                            toast.dismiss();
+                            handleConfirmDeleteTransaction(id);
+                        }}
+                    >
+                        Delete
+                    </button>
+
+                    <button
+                        className="delete-cancel-btn"
+                        onClick={() => toast.dismiss()}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>,
+            {
+                autoClose: false,
+                closeOnClick: false,
+                closeButton: false
+            }
+        );
     };
 
     return (
@@ -195,7 +232,7 @@ function Transactions({
                                                 {" "}
                                                 <button
                                                     className="text-link"
-                                                    onClick={() => handleDelete(transaction)}
+                                                    onClick={() => handleDeleteTransaction(transaction.id)}
                                                 >
                                                     Delete
                                                 </button>

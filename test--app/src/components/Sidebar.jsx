@@ -86,8 +86,8 @@ function Sidebar({
                     {accountMenuOpen && (
                         <div className="account-menu">
                             <div className="account-menu-header">
-                                <span>{user.name}</span>
-                                <small>{user.email}</small>
+                                <span>{user?.name || "User"}</span>
+                                <small>{user?.email || ""}</small>
                             </div>
 
                             <button
@@ -136,7 +136,7 @@ function Sidebar({
                     >
                         <div className="profile">
                             <div className="avatar">
-                                {user.name
+                                {(user?.name || "User")
                                     .split(" ")
                                     .filter(Boolean)
                                     .map((part) => part[0])
@@ -146,7 +146,7 @@ function Sidebar({
                             </div>
 
                             <div className="profile-info">
-                                <strong>{user.name}</strong>
+                                <strong>{user?.name || "User"}</strong>
                                 <small>Personal account</small>
                             </div>
 

@@ -68,46 +68,52 @@ function CategoryChart({ transactions, currency, period }) {
 
             <div className="chart-wrap" ref={chartRef}>
                 {chartCategories.length > 0 ? (
-                    <svg viewBox="0 0 600 230" preserveAspectRatio="none">
-                        {chartCategories.map(([category, amount], index) => {
-                            const y = 12 + index * 43;
-                            const barWidth =
-                                (amount / maxAmount) * 390 * (chartWidth / 600);
+                <svg viewBox="0 0 600 230">
+                    {chartCategories.map(([category, amount], index) => {
+                        const y = 12 + index * 43;
 
-                            return (
-                                <g key={category}>
-                                    <text
-                                        x="0"
-                                        y={y + 12}
-                                        fontSize="12"
-                                        fill="currentColor"
-                                    >
-                                        {category.length > 25
-                                            ? `${category.slice(0, 25)}…`
-                                            : category}
-                                    </text>
+                        const availableWidth = chartWidth - 210;
+                        const maxBarWidth = Math.min(Math.max(availableWidth, 180), 320);
+                        const barWidth = Math.max(
+                            (amount / maxAmount) * maxBarWidth,
+                            8
+                        );
 
-                                    <rect
-                                        x="160"
-                                        y={y}
-                                        width={barWidth}
-                                        height="19"
-                                        rx="5"
-                                        fill={chartColors[index % chartColors.length]}
-                                    />
+                        return (
+                            <g key={category}>
+                                <text
+                                    x="0"
+                                    y={y + 12}
+                                    fontSize="12"
+                                    fill="currentColor"
+                                >
+                                    {category.length > 25
+                                        ? `${category.slice(0, 25)}…`
+                                        : category}
+                                </text>
 
-                                    <text
-                                        x={Math.min(160 + barWidth + 8, 585)}
-                                        y={y + 14}
-                                        fontSize="11"
-                                        fill="currentColor"
-                                    >
-                                        {formatMoney(amount, currency)}
-                                    </text>
-                                </g>
-                            );
-                        })}
-                    </svg>
+                                <rect
+                                    x="160"
+                                    y={y}
+                                    width={barWidth}
+                                    height="19"
+                                    rx="5"
+                                    fill={chartColors[index % chartColors.length]}
+                                />
+
+                                <text
+                                    x="585"
+                                    y={y + 14}
+                                    fontSize="11"
+                                    fill="currentColor"
+                                    textAnchor="end"
+                                >
+                                    {formatMoney(amount, currency)}
+                                </text>
+                            </g>
+                        );
+                    })}
+                </svg>
                 ) : (
                     <div className="empty">
                         No expense data available yet.

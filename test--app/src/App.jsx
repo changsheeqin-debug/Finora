@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import { showSuccessToast, showErrorToast } from "./utils/showToast";
+import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import TransactionModal from "./components/TransactionModal";
-import { initialTransactions, mockGoals } from "./mockData";
 import SavingsGoals from "./pages/SavingsGoals";
 import GoalModal from "./components/GoalModal";
 import Settings from "./pages/Settings";
@@ -11,6 +13,8 @@ import UserProfile from "./pages/UserProfile";
 import NotificationDropdown from "./components/NotificationDropdown";
 import SwitchAccount from "./pages/SwitchAccount";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+
 import { getCurrentUser, 
         getUserProfile,
         getTransactions,
@@ -24,7 +28,11 @@ import { getCurrentUser,
         updateUserProfile,
         getUserSettings,
         updateUserSettings,
-        loginUser
+        loginUser,
+        getNotifications,
+        createNotification,
+        markNotificationAsRead,
+        markAllNotificationsAsRead
 } from "./services/api";
 
     const mapTransaction = (transaction) => {
@@ -37,9 +45,7 @@ import { getCurrentUser,
             category: transaction.category,
             paymentMethod: transaction.payment_method || transaction.paymentMethod,
             method: transaction.payment_method || transaction.paymentMethod || transaction.method,
-            date: transactionDate
-                ? transactionDate.slice(0, 10) + "T00:00"
-                : "",
+            date: transaction.transaction_date || "",
             note: transaction.note || ""
         };
     };
@@ -65,7 +71,6 @@ function App() {
     const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
     const [notifications, setNotifications] = useState([]);
-    const [showNotifications, setShowNotifications] = useState(false);
     const [profileHasUnsavedChanges, setProfileHasUnsavedChanges] = useState(false);
 
     const [settings, setSettings] = useState({
@@ -82,6 +87,12 @@ function App() {
 
     const [user, setUser] = useState(null);
     const [profileDraft, setProfileDraft] = useState({});
+
+    const [rememberedAccounts, setRememberedAccounts] = useState(() => {
+    return JSON.parse(
+        localStorage.getItem("rememberedAccounts") || "[]"
+    );
+});
 
     const handleNavigate = (page) => {
         if (
@@ -106,7 +117,7 @@ function App() {
             );
         } catch (error) {
             console.error("Failed to load transactions:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
     useEffect(() => {
@@ -128,16 +139,15 @@ function App() {
             setTransactions((prev) =>
                 prev.filter((transaction) => transaction.id !== id)
             );
+
+            await loadNotifications();
+
+            showSuccessToast("Transaction deleted successfully!");
+
         } catch (error) {
             console.error("Failed to delete transaction:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
-    };
-
-    // Open modal for editing a transaction
-    const handleEditTransaction = (transaction) => {
-        setEditingTransaction(transaction);
-        setIsTransactionModalOpen(true);
     };
 
     // Save a new or edited transaction
@@ -153,40 +163,30 @@ function App() {
             };
 
             if (editingTransaction) {
-                await updateTransaction(
-                    editingTransaction.id,
-                    transactionPayload
-                );
-
-                if (settings.transactionNotifications) {
-                    addNotification({
-                        title: "Transaction Updated",
-                        message: "Your transaction has been updated.",
-                        type: "transaction"
-                    });
-                }
+                await updateTransaction(editingTransaction.id, transactionPayload);
+                showSuccessToast("Transaction updated successfully!");
             } else {
                 await createTransaction(transactionPayload);
-
-                if (settings.transactionNotifications) {
-                    addNotification({
-                        title: "Transaction Added",
-                        message: "Your new transaction has been added successfully.",
-                        type: "transaction"
-                    });
-                }
+                showSuccessToast("Transaction added successfully!");
             }
 
             await loadTransactions();
+            await loadNotifications();
 
             setIsTransactionModalOpen(false);
             setEditingTransaction(null);
 
         } catch (error) {
             console.error("Failed to save transaction:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
+    // Open modal for editing a transaction
+    const handleEditTransaction = (transaction) => {
+        setEditingTransaction(transaction);
+        setIsTransactionModalOpen(true);
+    };
+
 
     const loadGoals = async () => {
         try {
@@ -195,7 +195,7 @@ function App() {
             setGoals(data.goals.map(mapGoal));
         } catch (error) {
             console.error("Failed to load savings goals:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
     useEffect(() => {
@@ -222,9 +222,14 @@ function App() {
             setGoals((prev) =>
                 prev.filter((goal) => goal.id !== id)
             );
+
+            await loadNotifications();
+
+            showSuccessToast("Savings goal deleted successfully!");
+
         } catch (error) {
             console.error("Failed to delete savings goal:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
 
@@ -241,18 +246,21 @@ function App() {
 
             if (editingGoal) {
                 await updateSavingsGoal(editingGoal.id, goalPayload);
+                showSuccessToast("Savings goal updated successfully!");
             } else {
                 await createSavingsGoal(goalPayload);
+                showSuccessToast("Savings goal created successfully!");
             }
 
             await loadGoals();
+            await loadNotifications();
 
             setIsGoalModalOpen(false);
             setEditingGoal(null);
 
         } catch (error) {
             console.error("Failed to save savings goal:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
 
@@ -275,7 +283,7 @@ function App() {
 
         } catch (error) {
             console.error("Failed to load user settings:", error);
-            alert(error.message);
+            showErrorToast(error.message);
         }
     };
 
@@ -295,6 +303,7 @@ function App() {
                 };
 
                 await updateUserSettings(settingsData);
+                showSuccessToast("Settings saved successfully!");
 
                 setSettings({ ...settingsData });
                 setSettingsDraft({ ...settingsData });
@@ -303,7 +312,7 @@ function App() {
 
             } catch (error) {
                 console.error("Failed to save settings:", error);
-                alert(error.message);
+                showErrorToast(error.message);
                 return;
             }
         }
@@ -400,46 +409,64 @@ function App() {
         restoreSession();
     }, []);
 
-    // notification
-    const addNotification = (notification) => {
-        setNotifications((prev) => [
-            {
-                id: `notification_${Date.now()}`,
-                date: new Date().toISOString(),
-                isRead: false,
-                ...notification
-            },
-            ...prev
-        ]);
+    const addNotification = async (notification) => {
+        try {
+            const data = await createNotification(notification);
+
+            console.log("Created notification:", data.notification);
+
+            setNotifications((prev) => [
+                data.notification,
+                ...prev
+            ]);
+        } catch (error) {
+            console.error("Failed to create notification:", error);
+        }
+    };
+
+    const loadNotifications = async () => {
+        try {
+            const data = await getNotifications();
+            setNotifications(data.notifications);
+        } catch (error) {
+            console.error("Failed to load notifications:", error);
+        }
     };
 
     const unreadCount = notifications.filter(
         (notification) => !notification.isRead
     ).length;
 
-    const handleToggleNotifications = () => {
-        setShowNotifications((prev) => !prev);
+    const handleMarkAsRead = async (id) => {
+        try {
+            await markNotificationAsRead(id);
+
+            setNotifications((prev) =>
+                prev.map((notification) =>
+                    notification.id === id
+                        ? { ...notification, isRead: true }
+                        : notification
+                )
+            );
+        } catch (error) {
+            console.error("Failed to mark notification as read:", error);
+        }
     };
 
-    const handleMarkAsRead = (id) => {
-        setNotifications((prev) =>
-            prev.map((notification) =>
-                notification.id === id
-                    ? { ...notification, isRead: true }
-                    : notification
-            )
-        );
-    };
+    const handleMarkAllAsRead = async () => {
+        try {
+            await markAllNotificationsAsRead();
 
-    const handleMarkAllAsRead = () => {
-        setNotifications((prev) =>
-            prev.map((notification) => ({
-                ...notification,
-                isRead: true
-            }))
-        );
+            setNotifications((prev) =>
+                prev.map((notification) => ({
+                    ...notification,
+                    isRead: true
+                }))
+            );
+        } catch (error) {
+            console.error("Failed to mark all notifications as read:", error);
+        }
     };
-
     //display switch account
     const handleSwitchAccount = () => {
         setActivePage("switch-account");
@@ -464,14 +491,27 @@ function App() {
                 occupation: data.user.occupation || ""
             };
 
+            // Remember this account
+            const token = localStorage.getItem("token");
+
+            const updatedAccounts = saveRememberedAccount(
+                selectedUser,
+                token
+            );
+
+            setRememberedAccounts(updatedAccounts);
+
             setUser(selectedUser);
             setProfileDraft({ ...selectedUser });
+
             await loadUserSettings();
+            await loadNotifications();
+
             setActivePage("dashboard");
 
         } catch (error) {
             console.error("Failed to retrieve user profile:", error);
-            alert("Login successful, but failed to load your profile.");
+            showErrorToast("Login successful, but failed to load your profile.");
 
             localStorage.removeItem("token");
             setUser(null);
@@ -482,16 +522,16 @@ function App() {
     const handleSelectAccount = async (email, password) => {
         const previousToken = localStorage.getItem("token");
         let newTokenInstalled = false;
+
         try {
-            // Authenticate the new account.
+            // Authenticate the selected account
             const data = await loginUser(email, password);
 
-            // Replace the previous account's token.
+            // Replace the previous account's token
             localStorage.setItem("token", data.token);
-
             newTokenInstalled = true;
 
-            // Load the new account's profile and settings.
+            // Load the selected account's profile
             const profileData = await getUserProfile();
 
             const selectedUser = {
@@ -502,10 +542,26 @@ function App() {
                 occupation: profileData.user.occupation || ""
             };
 
+            // Load the selected account's settings
             await loadUserSettings();
+            await loadNotifications();
 
+            // Remember the successfully logged-in account
+            const updatedAccounts = saveRememberedAccount(
+                selectedUser,
+                data.token
+            );
+
+            setRememberedAccounts(updatedAccounts);
+
+            // Update the current user
             setUser(selectedUser);
             setProfileDraft({ ...selectedUser });
+
+            // Clear previous account's data
+            setTransactions([]);
+            setGoals([]);
+
             setActivePage("dashboard");
             setMobileMenuOpen(false);
 
@@ -514,6 +570,7 @@ function App() {
         } catch (error) {
             console.error("Failed to switch account:", error);
 
+            // Restore the previous account's token if switching fails
             if (newTokenInstalled) {
                 if (previousToken) {
                     localStorage.setItem("token", previousToken);
@@ -526,8 +583,22 @@ function App() {
         }
     };
 
+    const handleRemoveAccount = (userId) => {
+    const updatedAccounts = rememberedAccounts.filter(
+        (account) => String(account.userId) !== String(userId)
+    );
+
+    setRememberedAccounts(updatedAccounts);
+
+    localStorage.setItem(
+        "rememberedAccounts",
+        JSON.stringify(updatedAccounts)
+    );
+};
+
     const isAuthPage =
         activePage === "login" || activePage === "switch-account";
+
 
     const handleSaveProfile = async () => {
         try {
@@ -538,6 +609,8 @@ function App() {
             };
 
             await updateUserProfile(profileData);
+
+            showSuccessToast("Profile updated successfully!");
 
             const updatedUser = {
                 ...user,
@@ -552,9 +625,39 @@ function App() {
 
         } catch (error) {
             console.error("Failed to update profile:", error);
-            alert(error.message);
+            showErrorToast(error.message);
             return false;
         }
+    };
+
+    // switch acc: Remember accounts after successful login.
+    const saveRememberedAccount = (user, token) => {
+        const savedAccounts = JSON.parse(
+            localStorage.getItem("rememberedAccounts") || "[]"
+        );
+
+        const updatedAccount = {
+            userId: user.userId,
+            name: user.name,
+            email: user.email,
+            token
+        };
+
+        // Replace the existing account if it is already remembered
+        const updatedAccounts = [
+            updatedAccount,
+            ...savedAccounts.filter(
+                (account) =>
+                    String(account.userId) !== String(user.userId)
+            )
+        ];
+
+        localStorage.setItem(
+            "rememberedAccounts",
+            JSON.stringify(updatedAccounts)
+        );
+
+        return updatedAccounts;
     };
 
     // Render the selected page
@@ -623,14 +726,29 @@ function App() {
                 return (
                     <SwitchAccount
                         user={user}
+                        accounts={rememberedAccounts}
                         onBack={() => setActivePage("dashboard")}
+                        onSelectAccount={handleSelectAccount}
                         onAddAccount={() => setActivePage("login")}
+                        onRemoveAccount={handleRemoveAccount}
                     />
                 );
 
             case "login":
                 return (
-                    <Login onLogin={handleLogin} />
+                    <Login
+                        onLogin={handleLogin}
+                        showBackButton={Boolean(user)}
+                        onBack={() => setActivePage("switch-account")}
+                        onSignUp={() => setActivePage("register")}
+                    />
+                );
+
+            case "register":
+                return (
+                    <Register
+                        onBackToLogin={() => setActivePage("login")}
+                    />
                 );
 
             default:
@@ -674,6 +792,7 @@ function App() {
         )}
         
         <main className="main-content">
+            <ToastContainer position="top-right" />
 
             <div className="app-header">
                 <button

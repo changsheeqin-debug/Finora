@@ -1,4 +1,5 @@
 import { formatMoney } from "../utils/formatMoney";
+import { toast } from "react-toastify";
 function SavingsGoals({
     goals,
     currency = "MYR",
@@ -26,9 +27,35 @@ function SavingsGoals({
     );
 
     const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this goal?")) {
-            onDeleteGoal(id);
-        }
+        toast.info(
+            <div className="delete-confirm-toast">
+                <p>Are you sure you want to delete this goal?</p>
+
+                <div className="delete-confirm-actions">
+                    <button
+                        className="delete-confirm-btn"
+                        onClick={() => {
+                            toast.dismiss();
+                            onDeleteGoal(id);
+                        }}
+                    >
+                        Delete
+                    </button>
+
+                    <button
+                        className="delete-cancel-btn"
+                        onClick={() => toast.dismiss()}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>,
+            {
+                autoClose: false,
+                closeOnClick: false,
+                closeButton: false
+            }
+        );
     };
 
     return (
