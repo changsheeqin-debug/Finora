@@ -72,11 +72,11 @@ function Transactions({
     const handleConfirmDeleteTransaction = async (id) => {
         try {
             await onDeleteTransaction(id);
-            toast.success("Transaction deleted successfully!", {
+           /*{} toast.success("Transaction deleted successfully!", {
                 className: "finora-success-toast",
                 icon: "✓",
                 autoClose: 3000
-            });
+            });}*/
         } catch (error) {
             console.error("Failed to delete transaction:", error);
             toast.error(error.message || "Failed to delete transaction.");

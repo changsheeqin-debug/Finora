@@ -2241,7 +2241,7 @@ th:first-child {
     font-size: 14px;
     font-weight: 500;
     line-height: 1.5;
-    color: light-dark(#1C2921, #E8F0EB);
+    color: #1C2921;
 }
 
 .delete-confirm-actions {
